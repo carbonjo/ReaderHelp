@@ -17,6 +17,9 @@ app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-producti
 
 # Configuration
 MODEL_NAME = "gemma3:12b"
+
+EMBEDDING_MODEL_NAME = "nomic-embed-text"
+
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx', 'epub', 'md'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -27,7 +30,8 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Initialize Ollama LLM and embeddings
 llm = Ollama(model=MODEL_NAME, request_timeout=120.0)
-embed_model = OllamaEmbedding(model_name=MODEL_NAME)
+
+embed_model = OllamaEmbedding(model_name=EMBEDDING_MODEL_NAME)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -213,26 +217,34 @@ def clear_session():
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    """Check if Ollama is running and the model is available"""
+    """Check if Ollama is running and the required models are available"""
     try:
         import requests
         response = requests.get('http://localhost:11434/api/tags', timeout=5)
         if response.status_code == 200:
             models = response.json().get('models', [])
-            model_available = any(MODEL_NAME in model.get('name', '') for model in models)
+            model_names = [model.get('name', '') for model in models]
+            llm_model_available = any(MODEL_NAME in name for name in model_names)
+            embedding_model_available = any(EMBEDDING_MODEL_NAME in name for name in model_names)
             return jsonify({
                 'ollama_running': True,
-                'model_available': model_available
+                'llm_model_available': llm_model_available,
+                'embedding_model_available': embedding_model_available
+
             })
         else:
             return jsonify({
                 'ollama_running': False,
-                'model_available': False
+                'llm_model_available': False,
+                'embedding_model_available': False
+
             })
     except Exception as e:
         return jsonify({
             'ollama_running': False,
-            'model_available': False,
+            'llm_model_available': False,
+            'embedding_model_available': False,
+
             'error': str(e)
         })
 
