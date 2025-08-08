@@ -17,7 +17,9 @@ app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-producti
 
 # Configuration
 MODEL_NAME = "gemma3:12b"
+
 EMBEDDING_MODEL_NAME = "nomic-embed-text"
+
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx', 'epub', 'md'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -28,6 +30,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Initialize Ollama LLM and embeddings
 llm = Ollama(model=MODEL_NAME, request_timeout=120.0)
+
 embed_model = OllamaEmbedding(model_name=EMBEDDING_MODEL_NAME)
 
 def allowed_file(filename):
@@ -227,18 +230,21 @@ def health_check():
                 'ollama_running': True,
                 'llm_model_available': llm_model_available,
                 'embedding_model_available': embedding_model_available
+
             })
         else:
             return jsonify({
                 'ollama_running': False,
                 'llm_model_available': False,
                 'embedding_model_available': False
+
             })
     except Exception as e:
         return jsonify({
             'ollama_running': False,
             'llm_model_available': False,
             'embedding_model_available': False,
+
             'error': str(e)
         })
 
