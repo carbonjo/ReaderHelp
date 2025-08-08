@@ -16,6 +16,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 
 # Configuration
+MODEL_NAME = "gemma3:12b"
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx', 'epub', 'md'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -25,8 +26,8 @@ app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Initialize Ollama LLM and embeddings
-llm = Ollama(model="gemma3:12b", request_timeout=120.0)
-embed_model = OllamaEmbedding(model_name="gemma3:12b")
+llm = Ollama(model=MODEL_NAME, request_timeout=120.0)
+embed_model = OllamaEmbedding(model_name=MODEL_NAME)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -218,20 +219,20 @@ def health_check():
         response = requests.get('http://localhost:11434/api/tags', timeout=5)
         if response.status_code == 200:
             models = response.json().get('models', [])
-            gemma_model = any('gemma2:12b' in model.get('name', '') for model in models)
+            model_available = any(MODEL_NAME in model.get('name', '') for model in models)
             return jsonify({
                 'ollama_running': True,
-                'gemma_model_available': gemma_model
+                'model_available': model_available
             })
         else:
             return jsonify({
                 'ollama_running': False,
-                'gemma_model_available': False
+                'model_available': False
             })
     except Exception as e:
         return jsonify({
             'ollama_running': False,
-            'gemma_model_available': False,
+            'model_available': False,
             'error': str(e)
         })
 
